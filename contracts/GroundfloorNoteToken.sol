@@ -108,7 +108,7 @@ contract GroundfloorNoteToken is ERC721, ERC721URIStorage, ERC721Pausable, ERC72
         override(ERC721)
     {
         super._increaseBalance(account, value);
-    }    
+    }
 
     function supportsInterface(bytes4 interfaceId)
         public
