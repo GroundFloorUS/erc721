@@ -56,3 +56,5 @@ for (let tokenId = 0; tokenId < tokenCount; tokenId++) {
 
   await writeFile(fileName, template(data));
 }
+
+console.log(`${tokenCount} tokens created. View them here: ${seriesPath}`);
