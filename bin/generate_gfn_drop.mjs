@@ -9,7 +9,7 @@ const pinata = new pinataSDK(process.env.PINATA_API_KEY, process.env.PINATA_SECR
 
 /////////////////// Ask the questions about the drop
 const series = await input({ message: 'What is the note series? (e.g. A,B,C,etc)', default: 'A' });
-const rate = parseFloat(await input({ message: 'What is the note rate? (e.g. 5.0)', default: 5.0 }));
+const rate = parseFloat(await input({ message: 'What is the note rate? (e.g. 5.0)', default: '5.0' }));
 const length = parseInt(await input({ message: 'What is the note length? (in days)', default: 60 }));
 
 const defaultDate = new Date();
@@ -20,11 +20,15 @@ const maturityDate = await input({ message: 'What is the maturity date? (YYYY-MM
 const tokenCount = parseInt(await input({ message: 'How many tokens to be generated?', default: 10 }));
 
 /////////////////// Paths and setup
-const rootPath = `./tokens/groundfloor_note_token`;
-const seriesPath = `${rootPath}/drops/series-${series}`;
+const seriesID = `${series}${rate * 100}`
+const rootPath = `./tokens/groundfloor-note-token`;
+const seriesPath = `${rootPath}/drops/GFNT-${seriesID}`;
+const imagePath = `${seriesPath}/GFNT-${seriesID}-images`;
+const metadataPath = `${seriesPath}/GFNT-${seriesID}-metadata`;
 const promissoryNoteTemplatePath = `${rootPath}/note-template.jpeg`;
 
-await mkdir(seriesPath, { recursive: true });
+await mkdir(imagePath, { recursive: true });
+await mkdir(metadataPath, { recursive: true });
 
 const template_source = await content(`${rootPath}/metadata-values.json.mustache`);
 const template = Handlebars.compile(template_source);
@@ -42,10 +46,10 @@ async function content(path) {
   return await readFile(path, 'utf8');
 }
 
-async function sendToPinata(name, keyvalues, path) {
+async function sendToPinata(path, keyvalues) {
   const options = {
-    pinataMetadata: { name, keyvalues },
-    pinataOptions: { cidVersion: 0 }
+    pinataMetadata: { keyvalues },
+    pinataOptions: { cidVersion: 1 }
   };
 
   return pinata.pinFromFS(path, options);
@@ -53,17 +57,19 @@ async function sendToPinata(name, keyvalues, path) {
 
 /////////////////// Process tokens
 for (let tokenId = 0; tokenId < tokenCount; tokenId++) {
-  let tokenName = `${series}${parseInt(rate * 100)}${tokenId}`
+  let tokenName = `${seriesID}${tokenId}`
 
   // Create imate
-  let imgPath = `${seriesPath}/token-${tokenId}-promissory-note.jpeg` ;
+  let imgPath = `${imagePath}/GFNT-${tokenName}-promissory-note.jpeg` ;
   await copyFile(promissoryNoteTemplatePath, imgPath);
   await createPromissoryNote(imgPath, `Series: ${tokenName}`);
-  let pinataRes = await sendToPinata(
-    `GFNT-Image-${tokenName}`,
-    { series, fileType: 'image' },
-    imgPath
-  );
+}
+
+let pinataRes = await sendToPinata(imagePath, { seriesID });
+const folderCID = pinataRes.IpfsHash
+
+for (let tokenId = 0; tokenId < tokenCount; tokenId++) {
+  let tokenName = `${seriesID}${tokenId}`
 
   // Create json file
   let data = {
@@ -73,15 +79,11 @@ for (let tokenId = 0; tokenId < tokenCount; tokenId++) {
     tokenName,
     tokenId,
     "maturityDate": `${Date.parse(maturityDate) / 1000}`,
-    "image": `${process.env.IPFS_GATEWAY}/ipfs/${pinataRes.IpfsHash}`,
+    "image": `${process.env.IPFS_GATEWAY}/ipfs/${folderCID}/GFNT-${tokenName}-promissory-note.jpeg`,
   }
-  let filePath = `${seriesPath}/token-${tokenId}.json`;
+  let filePath = `${metadataPath}/GFNT-${tokenName}-metadata.json`;
   await writeFile(filePath, template(data));
-  await sendToPinata(
-    `GFNT-Metadata-${tokenName}`,
-    { tokenType: 'GFNT', tokenName, fileType: 'json' },
-    filePath
-  );
 }
+await sendToPinata(metadataPath, { seriesID });
 
 console.log(`${tokenCount} tokens created. View them here: ${seriesPath}`);
