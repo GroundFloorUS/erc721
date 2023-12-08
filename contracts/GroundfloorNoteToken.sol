@@ -70,6 +70,11 @@ contract GroundfloorNoteToken is ERC721, ERC721URIStorage, ERC721Pausable, ERC72
         return _contactBalance;
     }
 
+    function nextTokenId() public view onlyRole(MINTER_ROLE) returns(uint256) {
+        require(_nextTokenId < _totalSupply, "Unable to mint tokens, tokens issued exceed total supply");
+        return _nextTokenId;
+    }
+
     //----------- Standard open zepellin overrides ------------//
     function pause() public onlyRole(PAUSER_ROLE) {
         _pause();
