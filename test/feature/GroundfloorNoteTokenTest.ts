@@ -8,16 +8,16 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
 describe("GroundfloorNoteToken", function () {
   let contract: GroundfloorNoteToken;
   let totalSupply = 5;
-  let owner, minter, pauser, payer, investor1, investor2;
+  let owner, minter, pauser, payer, distributor, investor1, investor2, investor3;
   let tokenUrl = "https://salmon-bizarre-mockingbird-50.mypinata.cloud/ipfs/QmXyK2D5RQqtvFnuo1bUdKnUrBikTvx6BA3QKH3P8FJTiY";
 
   this.beforeAll(async function () {
-    [owner, minter, pauser, payer, investor1, investor2] = await ethers.getSigners();
+    [owner, minter, pauser, payer, distributor, investor1, investor2, investor3] = await ethers.getSigners();
     const Contract = await ethers.getContractFactory("GroundfloorNoteToken");
     contract = await Contract.deploy(owner.address, totalSupply);
   });
 
-  describe("Deployment", function () {
+  describe("Feature Tests", function () {
     it("Should be deployed correctly", async function () {
       const name = 'GroundfloorNoteToken';
       const symbol = 'GFNT';
@@ -73,28 +73,15 @@ describe("GroundfloorNoteToken", function () {
   });
 
   describe("Mint a couple of tokens", function () {
-    it("Should mint 3 tokens to investor 1", async function () {
+    it("Should mint 5 tokens to the distributor wallet", async function () {
       const minterRole = await contract.MINTER_ROLE();
       await contract.grantRole(minterRole, minter.address);
       expect(await contract.hasRole(minterRole, minter.address)).to.equal(true);
       const mintableContract = await contract.connect(minter);
 
-      for(let i=0; i<=2; i++) {
-        expect(await mintableContract.safeMint(investor1.address, tokenUrl)).to.be.ok;
-        expect(await contract.ownerOf(i)).to.equal(investor1.address);
-        expect(await contract.tokenURI(i)).to.equal(tokenUrl);
-      }
-    });
-
-    it("Should mint 2 tokens to investor 2", async function () {
-      const minterRole = await contract.MINTER_ROLE();
-      await contract.grantRole(minterRole, minter.address);
-      expect(await contract.hasRole(minterRole, minter.address)).to.equal(true);
-      const mintableContract = await contract.connect(minter);
-
-      for(let i=3; i<=4; i++) {
-        expect(await mintableContract.safeMint(investor2.address, tokenUrl)).to.be.ok;
-        expect(await contract.ownerOf(i)).to.equal(investor2.address);
+      for(let i=0; i<totalSupply; i++) {
+        expect(await mintableContract.safeMint(distributor.address, tokenUrl)).to.be.ok;
+        expect(await contract.ownerOf(i)).to.equal(distributor.address);
         expect(await contract.tokenURI(i)).to.equal(tokenUrl);
       }
     });
@@ -106,6 +93,50 @@ describe("GroundfloorNoteToken", function () {
       } catch(error) {
         expect(error.message).to.match(/Unable to mint tokens, tokens issued exceed total supply'/);
       }
+    });
+  });
+
+  describe("Confirm tokens can be transferred to other investors", function () {
+    it("Conttract owner should not be able to transfer minted tokens", async function () {
+      try {
+        await contract.transferFrom(distributor.address, investor1.address, 0);
+        throw new Error("transfer should have failed");
+      } catch (error) {
+        expect(error.message).to.match(/ERC721InsufficientApproval/);
+      }
+    });
+
+    it("Minter owner should not be able to transfer minted tokens", async function () {
+      const minterContract = await contract.connect(minter);
+      try {
+        await minterContract.transferFrom(distributor.address, investor1.address, 0);
+        throw new Error("transfer should have failed");
+      } catch (error) {
+        expect(error.message).to.match(/ERC721InsufficientApproval/);
+      }
+    });
+
+    it("Should transfer 3 tokens to investor 1", async function () {
+      const distributorContract = await contract.connect(distributor);
+      for(let i=0; i<3; i++) {
+        await distributorContract.transferFrom(distributor.address, investor1.address, i);
+      }
+      expect(await contract.balanceOf(investor1.address)).to.equal(3);
+      expect(await contract.ownerOf(0)).to.equal(investor1.address);
+    });
+
+    it("Should transfer 2 tokens to investor 2", async function () {
+      const distributorContract = await contract.connect(distributor);
+      for(let i=3; i<totalSupply; i++) {
+        await distributorContract.approve(investor2.address, i);
+        await distributorContract.transferFrom(distributor.address, investor2.address, i);
+      }
+      expect(await contract.balanceOf(investor2.address)).to.equal(2);
+      expect(await contract.ownerOf(3)).to.equal(investor2.address);
+    });
+
+    it("Should have no more tokens to transfer", async function () {
+      expect(await contract.balanceOf(distributor.address)).to.equal(0);
     });
   });
 

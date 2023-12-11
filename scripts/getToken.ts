@@ -8,9 +8,8 @@ async function main() {
     // const deployerAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
     // const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
 
-    // Goerli ids
-    // const deployerAddress = "0x720D9B8C6f1E3Fc4b956e571D4Db025Db47c979D";
-    const contractAddress = "0x2F076E0b1Dc5B6676881029c7e03Fb8591682539";
+    // Sepolia ids
+    const contractAddress = "0x0c3569e963Cbdf810F9481587a709a8A82f8dE0A";
 
     const [deployer] = await ethers.getSigners();
     const deployerAddress = deployer.address;
@@ -25,8 +24,11 @@ async function main() {
     // const mintTx = await contract.symbol();
     //const mintTx = await contract.tokenURI(0);
     //const mintTx = await contract.balanceOf(deployerAddress);
-    const mintTx = await contract.ownerOf(0);
-    console.log(`Response: ${mintTx}`);
+    for (let i=0; i<5; i++) {
+        let mintTx = await contract.ownerOf(i);
+        let uri = await contract.tokenURI(i);
+        console.log(`Token ${i} is Owned By: ${mintTx} => ${uri}`);
+    }
 }
 
 main()

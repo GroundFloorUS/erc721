@@ -5,16 +5,21 @@ dotenvConfig();
 
 async function main() {
     // Localhost Ids
-    // const deployerAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
-    // const contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+    // const deployerAddress = "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266";
+    // const contractAddress = "0x959922bE3CAee4b8Cd9a407cc3ac1C251C2007B1";
 
-    // Goerli ids
-    // const deployerAddress = "0x720D9B8C6f1E3Fc4b956e571D4Db025Db47c979D";
-    const contractAddress = "0x2F076E0b1Dc5B6676881029c7e03Fb8591682539";
-    
+    // Sepolia ids
+    const contractAddress = "0x0c3569e963Cbdf810F9481587a709a8A82f8dE0A";
     const [deployer] = await ethers.getSigners();
     const deployerAddress = deployer.address;
-    const tokenURI = 'https://salmon-bizarre-mockingbird-50.mypinata.cloud/ipfs/QmXKrS8rcUFHDsRFsaDfv25wpMYnZfZMA19jdtPeAoDWok/A5000.json';
+
+    const tokenURIs = [
+        'https://salmon-bizarre-mockingbird-50.mypinata.cloud/ipfs/bafybeiebpy5yc36njffdzljijwg6vn3wc7egxjsr6yknxuiht2iibpsf6i/GFNT-A5000-metadata.json',
+        'https://salmon-bizarre-mockingbird-50.mypinata.cloud/ipfs/bafybeiebpy5yc36njffdzljijwg6vn3wc7egxjsr6yknxuiht2iibpsf6i/GFNT-A5001-metadata.json',
+        'https://salmon-bizarre-mockingbird-50.mypinata.cloud/ipfs/bafybeiebpy5yc36njffdzljijwg6vn3wc7egxjsr6yknxuiht2iibpsf6i/GFNT-A5002-metadata.json',
+        'https://salmon-bizarre-mockingbird-50.mypinata.cloud/ipfs/bafybeiebpy5yc36njffdzljijwg6vn3wc7egxjsr6yknxuiht2iibpsf6i/GFNT-A5003-metadata.json',
+        'https://salmon-bizarre-mockingbird-50.mypinata.cloud/ipfs/bafybeiebpy5yc36njffdzljijwg6vn3wc7egxjsr6yknxuiht2iibpsf6i/GFNT-A5004-metadata.json'
+    ];
 
     const Contract = await ethers.getContractFactory("GroundfloorNoteToken");
     const contract = await Contract.attach(contractAddress);
@@ -22,12 +27,17 @@ async function main() {
 
     await contract.connect(deployerAddress);
     console.log(`Connected to contract from address: ${deployerAddress}`);
-    console.log(`Minting:`);
-    console.log(`   Token To: ${deployerAddress}`);
-    console.log(`   Token URI: ${tokenURI}`);
+    console.log(`Minting To Address: ${deployerAddress}`);
 
-    const mintTx = await contract.safeMint(deployerAddress, tokenURI);
-    console.log(`Minted token: ${mintTx.hash}`);
+    for (let i=0; i<tokenURIs.length; i++) {
+        console.log(`----------------------------------------------------`);
+        console.log(`  Minting Token: ${i} of ${tokenURIs.length}`);
+        const tokenURI = tokenURIs[i];
+        console.log(`    Token URI: ${tokenURI}`);
+        const mintTx = await contract.safeMint(deployerAddress, tokenURI);
+        console.log(`    Minted token: ${mintTx.hash}\n`);
+    }
+    console.log(`----------------------------------------------------`);
 }
 
 main()

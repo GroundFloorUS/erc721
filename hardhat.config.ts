@@ -20,10 +20,10 @@ const config: HardhatUserConfig = {
     localhost: {
       url: "http://127.0.0.1:8545"
     },
-    goerli: {
+    sepolia: {
       accounts: [`${process.env.TEST_PRIVATE_KEY}`],
       url: `${process.env.TEST_NETWORK_URL}`
-    }
+    },
   },
   etherscan: {
     apiKey: process.env.ETHERSCAN_API_KEY
