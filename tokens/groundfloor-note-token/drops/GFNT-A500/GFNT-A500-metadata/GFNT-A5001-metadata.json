@@ -1,0 +1,28 @@
+{
+  "description": "GroundfloorNoteToken - Series A - 5 - 60 Day Note.", 
+  "external_url": "https://crypto.groundfloor.us/t/A5001", 
+  "name": "GroundfloorNoteToken - A5001",
+  "image": "https://salmon-bizarre-mockingbird-50.mypinata.cloud/ipfs/bafybeievda3m3pltwfxei3qgnhepxfgu6il2fyy54kfpjtkz5f374rypby/GFNT-A5001-promissory-note.jpeg",
+  "uuid": "f53f8c71-3546-44d8-8ae1-ae99bf37535c",
+  "attributes": [ 
+    {
+      "trait_type": "Term", 
+      "value": "60 Days"
+    },
+    {
+      "display_type": "boost_percentage",
+      "trait_type": "Rate", 
+      "value": 5
+    },
+    {
+      "display_type": "date",
+      "trait_type": "Maturity Date", 
+      "value": 1706659200
+    },
+    {
+      "display_type": "number", 
+      "trait_type": "Token Id", 
+      "value": 1
+    }
+  ]
+}
