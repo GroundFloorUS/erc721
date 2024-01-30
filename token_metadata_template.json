@@ -1,0 +1,54 @@
+{
+  "name": "LRO Redemption Token: 1703 Bryden Rd #2",
+  "description": "Redemption token for a Groundfloor LRO.  The owner of this token may register it with Groundfloor in order to receive the benefits from the underlying investment.", 
+  "external_url": "https://crypto.groundfloor.com/nft", 
+  "asset_url": "https://www.groundfloor.us/investments/la_c0bf5ef67548/preview", 
+  "offering_circular_url": "https://www.sec.gov/Archives/edgar/data/1588504/000114420418000003/tv482169_partiiandiii.htm", 
+  "image": "https://salmon-bizarre-mockingbird-50.mypinata.cloud/ipfs/QmXyK2D5RQqtvFnuo1bUdKnUrBikTvx6BA3QKH3P8FJTiY", 
+  "attributes": [ 
+    {
+      "trait_type": "Investment Amount", 
+      "value": "$1,000"
+    },
+    {
+      "trait_type": "Investment Date", 
+      "value": "10/9/23"
+    },
+    {
+      "trait_type": "Maturity Date", 
+      "value": "05/22/2024"
+    },
+    {
+      "trait_type": "Loan Term", 
+      "value": "15 months"
+    },
+    {
+      "trait_type": "Loan Amount", 
+      "value": "$248,790"
+    },
+    {
+      "trait_type": "Purpose", 
+      "value": "Refinance - Rehab"
+    },
+    {
+      "trait_type": "Rate", 
+      "value": "12.0%"
+    },
+    {
+      "trait_type": "Groundfloor Rating", 
+      "value": "C"
+    },
+    {
+      "trait_type": "Loan To ARV%", 
+      "value": "68.6%"
+    },
+    {
+      "trait_type": "Security Position", 
+      "value": "First Lien"
+    },
+    {
+      "trait_type": "DNA", 
+      "value": "{UUID}"
+    }
+  ]
+}
