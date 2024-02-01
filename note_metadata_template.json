@@ -1,0 +1,29 @@
+{
+  "description": "GroundfloorNoteToken - Series A - 5.00% - 90 Day Note.", 
+  "external_url": "https://crypto.groundfloor.us/t/A50000", 
+  "image": "https://salmon-bizarre-mockingbird-50.mypinata.cloud/ipfs/QmXyK2D5RQqtvFnuo1bUdKnUrBikTvx6BA3QKH3P8FJTiY", 
+  "name": "GroundfloorNoteToken - A50000",
+  "attributes": [ 
+    {
+      "trait_type": "Term", 
+      "value": "90 Days"
+    },
+    {
+      "trait_type": "Rate", 
+      "value": "5.0%"
+    },
+    {
+      "trait_type": "Maturity Date", 
+      "value": "04/01/2023"
+    },
+    {
+      "display_type": "number", 
+      "trait_type": "Token Id", 
+      "value": 0
+    },
+    {
+      "trait_type": "DNA", 
+      "value": "{UUID}"
+    }
+  ]
+}
