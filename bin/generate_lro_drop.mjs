@@ -9,13 +9,13 @@ import crypto from 'crypto';
 const pinata = new pinataSDK(process.env.PINATA_API_KEY, process.env.PINATA_SECRET_KEY);
 
 /////////////////// Ask the questions about the drop
-const series = await input({ message: 'What is the lro series? (e.g. A,B,C,etc)', default: 'B' });
+const series = await input({ message: 'What is the lro series? (e.g. A,B,C,etc)', default: 'A' });
 const externalUrl = await input({ message: 'What is the external url for this series?', default: 'https://crypto.groundfloor.com/nft' });
 const name = await input({ message: 'What is the name of the property?', default: '1703 Bryden Rd' });
 const address1 = await input({ message: 'What is the address 1 of the property?', default: name });
 const address2 = await input({ message: 'What is the address 2 of the property?', default: 'Columbus OH, 43205' });
 const loanAmount = parseFloat(await input({ message: 'What is the loan amount for this token? (e.g. 40000.00)', default: 40000.00 }));
-const purpose = await input({ message: 'What is the purpose of this loan?', default: 'Refinance - Rehab' });
+const purpose = await input({ message: 'What is the purpose of this loan?', default: 'Rehab of House' });
 const securityPosition = await input({ message: 'What is the security position of this loan? (e.g. First Lien)', default: 'First Lien' });
 const amount = parseFloat(await input({ message: 'What is the investment amount for this token? (e.g. 1000.00)', default: 1000.00 }));
 const rate = parseFloat(await input({ message: 'What is the lro rate? (e.g. 5.0)', default: 12.0 }));
@@ -27,6 +27,10 @@ const investmentDate = await input({ message: 'What is the investment date? (YYY
 const maturityDate = await input({ message: 'What is the maturity date? (YYYY-MM-DD)', default: '2024-05-22' });
 const tokenCount = parseInt(await input({ message: 'How many tokens to be generated?', default: 2 }));
 const offeringCircular = await input({ message: 'What is the url for the offering circular?', default: 'https://www.sec.gov/Archives/edgar/data/1588504/000114420418000003/tv482169_partiiandiii.htm' });
+const tokenRegistrationUrl = await input({ message: 'What is the url for investors to register their tokens?', default: 'https://crypto.groundfloor.com/nft' });
+const sendToIPFS = await input({ message: 'Do you want to push these to Pinata? (yes or no)', default: 'no' });
+
+
 
 // Computational values
 const maxSeriesDigits = 4;
@@ -66,23 +70,23 @@ async function createLroToken(imgPath, dna) {
   const image = await Jimp.read(imgPath);
   const totalH = image.bitmap.height; 
   
-  let startX = 25;
+  let startX = 20;
   let startY = (totalH - 265);
   let ts = 20; // text spacing
   let bs = 30; // box spacing
 
   // Details Box
-  image.print(font32, startX, startY, name);
+  image.print(font32, (startX + 2), startY, name);
 
   // Reset Y Postion for Details
   startX += 5;
   startY += bs;
 
   image.print(font16, startX, startY += ts, `Amount: ${amountUSD}`);
-  image.print(font16, startX, startY += ts, `Expected Payout: ${returnUSD}`);
-  image.print(font16, startX, startY += ts, `Interest Rate: ${rate}%`);
-  image.print(font16, startX, startY += ts, `Matures: ${maturityDate}`);
   image.print(font16, startX, startY += ts, `Purpose: ${purpose}`);
+  image.print(font16, startX, startY += ts, `Matures: ${maturityDate}`);
+  image.print(font16, startX, startY += ts, `Interest Rate: ${rate}%`);
+  image.print(font16, startX, startY += ts, `Effective Annual Return: ${returnUSD}`);
 
   // Reset Y Postion for Address and DNA boxes
   startY += bs + 10;
@@ -93,7 +97,7 @@ async function createLroToken(imgPath, dna) {
   image.print(font16, startX, startY + (ts * 2), address2);
 
   // DNA Box
-  startX += 260; // Reset X positioin
+  startX += 230; // Reset X position
   image.print(font16, startX, startY + (ts * 1), 'DNA:');
   image.print(font16, startX, startY + (ts * 2), dna);
 
@@ -115,19 +119,25 @@ async function sendToPinata(path, keyvalues) {
 
 /////////////////// Process tokens
 for (let tokenId = 0; tokenId < tokenCount; tokenId++) {
-  let dna = `${seriesID}-${tokenId.toString().padStart(maxTokenDigits, '0')}`;
+  let dna = `GLRT-${seriesID}-${tokenId.toString().padStart(maxTokenDigits, '0')}`;
 
   // Create image
-  let imgPath = `${imagePath}/GLRT-${dna}.jpeg` ;
+  let imgPath = `${imagePath}/${dna}.jpeg` ;
   await copyFile(lroTemplatePath, imgPath);
   await createLroToken(imgPath, dna);
 }
 
-let pinataRes = await sendToPinata(imagePath, { seriesID });
-const folderCID = pinataRes.IpfsHash
+let folderCID = '';
+if (sendToIPFS.toLowerCase() === "yes") {
+  let pinataRes = await sendToPinata(imagePath, { seriesID });
+  folderCID = pinataRes.IpfsHash
+  console.log(`Token images created and pushed to IPFS: ${folderCID}`);
+} else {
+  console.log(`Token metadata created locally`);
+}
 
 for (let tokenId = 0; tokenId < tokenCount; tokenId++) {
-  let dna = `${seriesID}-${tokenId.toString().padStart(maxTokenDigits, '0')}`;
+  let dna = `GLRT-${seriesID}-${tokenId.toString().padStart(maxTokenDigits, '0')}`;
   let tokenName = `Groundfloor LRO Redemption Token (GLRT) - ${series.padStart(maxSeriesDigits, '0')}`
   let uuid = crypto.randomUUID();
   uuids.push(uuid);
@@ -153,15 +163,21 @@ for (let tokenId = 0; tokenId < tokenCount; tokenId++) {
     investmentDate,
     maturityDate,
     tokenCount,
-    offeringCircular ,
+    offeringCircular,
+    tokenRegistrationUrl,
     tokenName,
     tokenId,
     uuid,
-    "imageUrl": `${process.env.IPFS_GATEWAY}/ipfs/${folderCID}/GLRT-${dna}.jpeg`,
+    "imageUrl": `${process.env.IPFS_GATEWAY}/ipfs/${folderCID}/${dna}.jpeg`,
   }
-  let filePath = `${metadataPath}/GLRT-${dna}.json`;
+  let filePath = `${metadataPath}/${dna}.json`;
   await writeFile(filePath, template(data));
 }
-await sendToPinata(metadataPath, { seriesID });
+if (sendToIPFS.toLowerCase() === "yes") {
+  await sendToPinata(metadataPath, { seriesID });
+  console.log(`Tokens and metadata created and pushed to IPFS`);
+} else {
+  console.log(`Tokens and metadata created locally`);
+}
 
 console.log(`${tokenCount} tokens created. View them here: ${seriesPath}`);
