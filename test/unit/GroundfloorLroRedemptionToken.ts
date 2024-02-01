@@ -9,6 +9,7 @@ const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000";
   
 describe("GroundfloorLroRedemptionToken", function () {
   let contract: GroundfloorLroRedemptionToken;
+  let seriesId = 'A';
   let totalSupply = 5;
   let owner, minter, pauser, payer, investor1, investor2;
   let contractBaseUrl = "https://salmon-bizarre-mockingbird-50.mypinata.cloud/ipfs/";
@@ -18,7 +19,7 @@ describe("GroundfloorLroRedemptionToken", function () {
   this.beforeAll(async function () {
     [owner, investor1, investor2] = await ethers.getSigners();
     const Contract = await ethers.getContractFactory("GroundfloorLroRedemptionToken");
-    contract = await Contract.deploy(owner.address, totalSupply);
+    contract = await Contract.deploy(owner.address, seriesId, totalSupply);
   });
 
   describe("Deployment", function () {
@@ -29,6 +30,9 @@ describe("GroundfloorLroRedemptionToken", function () {
       // assert that the value is correct
       expect(await contract.name()).to.equal(name);
       expect(await contract.symbol()).to.equal(symbol);
+      expect(await contract.series()).to.equal(seriesId);
+      expect(await contract.totalMinted()).to.equal(0);
+      expect(await contract.totalSupply()).to.equal(totalSupply);
     });
   });
 
