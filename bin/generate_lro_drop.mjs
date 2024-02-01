@@ -30,8 +30,6 @@ const offeringCircular = await input({ message: 'What is the url for the offerin
 const tokenRegistrationUrl = await input({ message: 'What is the url for investors to register their tokens?', default: 'https://crypto.groundfloor.com/nft' });
 const sendToIPFS = await input({ message: 'Do you want to push these to Pinata? (yes or no)', default: 'no' });
 
-
-
 // Computational values
 const maxSeriesDigits = 4;
 const maxTokenDigits = 5;
@@ -87,7 +85,6 @@ async function createLroToken(imgPath, dna) {
   image.print(font16, startX, startY += ts, `Matures: ${maturityDate}`);
   image.print(font16, startX, startY += ts, `Interest Rate: ${rate}%`);
   image.print(font16, startX, startY += ts, `Effective Annual Return: ${returnUSD}`);
-
   // Reset Y Postion for Address and DNA boxes
   startY += bs + 10;
 
