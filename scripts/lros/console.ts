@@ -7,14 +7,12 @@ dotenvConfig();
 // ----------------------------------------------------------------
 // Command functions to be run
 async function askForCommand(context) {
+    if (context.connectedContractAddress) {
+      console.log('Currently connected to contract at address: %s', context.connectedContractAddress);
+    }
     const cmd = await select({
         message: 'What would you like to do?',
         choices: [
-          {
-            name: 'Deploy A New Contract',
-            value: 'deployContract',
-            description: 'Deploy a new GroundfloorLroRedemptionToken contract',
-          },
           {
             name: 'List Minted Tokens',
             value: 'showTokens',
@@ -24,6 +22,16 @@ async function askForCommand(context) {
             name: 'Show Wallet Balance',
             value: 'showBalance',
             description: 'Show balance of a given wallet',
+          },
+          {
+            name: 'Connect To A Contract',
+            value: 'confirmContractAddress',
+            description: 'Deploy a new GroundfloorLroRedemptionToken contract',
+          },
+          {
+            name: 'Deploy A New Contract',
+            value: 'deployContract',
+            description: 'Deploy a new GroundfloorLroRedemptionToken contract',
           },
           {
             name: 'Exit',
@@ -42,6 +50,10 @@ async function askForCommand(context) {
     switch(cmd) {
       case 'deployContract': {
         await deployContract(context);
+        break;
+      }
+      case 'confirmContractAddress': {
+        await confirmContractAddress(context);
         break;
       }
       case 'showTokens': {
@@ -70,15 +82,28 @@ async function askForCommand(context) {
 // Function to allocate hash space for command context including
 // default values and responses.
 async function ensureCommandContext(context, cmd) {
-  if (!context[cmd]) {
-    context[cmd] = {};
-  }
+  if (!context[cmd]) { context[cmd] = {}; }
 }
+
+// ----------------------------------------------------------------
+// Function that reset the results in the context to clear out data
+// if we change contracts or need to refresh the data
+async function resetResults(context) {
+  // Listing Tokens
+  await ensureCommandContext(context, 'showTokens')
+  context.showTokens.totalMinted = null;
+  context.showTokens.tokens = [];
+
+  // Showing Balance
+  await ensureCommandContext(context, 'showBalance')
+  context.showBalance.walletAddress = null;
+}
+
 
 //----------------------------------------------------------------
 // Function to iterate through the allocated tokens within a contract
 async function showTokens(context) {
-  await contectToContract(context);
+  if (!context.connectedContractAddress) { await confirmContractAddress(context); }
 
   if (context.showTokens.totalMinted) {
     const keep = await confirm({ 
@@ -119,19 +144,19 @@ async function showTokens(context) {
 // Function that connects to a specific contract and shows the 
 // balance of a wallet
 async function showBalance(context) {
-    await contectToContract(context);
+  if (!context.connectedContractAddress) { await confirmContractAddress(context); }
 
-    let walletAddress = null;
-    while (!walletAddress) {
-      walletAddress = await input({
-        message: 'What wallet address should we show a balance for? (e.g hex value)',
-        default: context.showBalance.walletAddress
-      });
-    }
+  let walletAddress = null;
+  while (!walletAddress) {
+    walletAddress = await input({
+      message: 'What wallet address should we show a balance for? (e.g hex value)',
+      default: context.showBalance.walletAddress
+    });
+  }
 
-    context.showBalance.walletAddress = walletAddress;
-    const balance = await context.contract.balanceOf(walletAddress);
-    console.log(` Wallet (${walletAddress} has a balance of: ${balance}`);
+  context.showBalance.walletAddress = walletAddress;
+  const balance = await context.contract.balanceOf(walletAddress);
+  console.log(` Wallet (${walletAddress} has a balance of: ${balance}`);
 }
 
 // ----------------------------------------------------------------
@@ -185,39 +210,50 @@ async function deployContract(context) {
   console.log(`  Series Id: ${seriesKey}`);
   console.log(`  Token Supply: ${context.deployContract.totalSupply}`);
 
-  context.contract = await context.contractFactory.deploy(
+  const newContract = await context.contractFactory.deploy(
     context.deployContract.ownerAddress,
     seriesKey,
     context.deployContract.totalSupply
   );
-  context.contractAddress = await context.contract.getAddress();
+  const newContractAddress = await newContract.getAddress();
 
   console.log(`  ------------------------------------------------------`);
-  console.log(`  New Contract Address: ${context.contractAddress}`);
+  console.log(`  New Contract Address: ${newContractAddress}`);
   console.log(`--------------------------------------------------------`);
+
+  if (await confirm({ message: `Would you like to connect to the new contract?`, default: true })) {
+    context.contract = newContract;
+    context.contractAddress = newContractAddress;
+    await connectToContract(context)
+  }
 }
 
 // ----------------------------------------------------------------
-// Function that connects to a specific contract by it's address
-async function contectToContract(context) {
-  let contractAddress = context.contract ? context.contract.getAddress() : null;
+// Function that confirms from the user we are working with the 
+// correct contract
+async function confirmContractAddress(context) {
+  context.contractAddress = await input({ 
+    message: 'What is the address of the contract we should connect to? (e.g hex value)', 
+    default: context.contractAddress 
+  });
 
-  if (context.contract) {
-    const keep = await confirm({ message: `Would you like to continue using the contract at address ${context.contractAddress}`, default: true });
-    if (!keep) {
-      contractAddress = null;
-    }
-  }
-
-  if (!contractAddress) {
-    context.contractAddress = await input({ message: 'What is the address of the contract we should connect to? (e.g hex value)', default: context.defaultContractAddress });
-    context.contract = await context.contractFactory.attach(context.contractAddress);
-    console.log(`Attached to contract at address: ${context.contractAddress}`);
-
-    await context.contract.connect(context.signer);
-    console.log(`Connected to contract from address: ${context.signer.address}`);
+  if (context.connectedContractAddress !== context.contractAddress) {
+    await connectToContract(context);
   }
 }
+
+// ----------------------------------------------------------------
+// Function that connects to the contract by it's wallet address
+async function connectToContract(context) {
+  context.contract = await context.contractFactory.attach(context.contractAddress);
+  console.log(`Attached to contract at address: ${context.contractAddress}`);
+
+  await context.contract.connect(context.signer);
+  console.log(`Connected to contract from address: ${context.signer.address}`);
+  context.connectedContractAddress = context.contractAddress;
+  resetResults(context);
+}
+
 
 // ----------------------------------------------------------------
 // Main Script Function
@@ -239,11 +275,11 @@ async function main() {
     context.maxTokenDigits = 5;
     switch(process.env.HARDHAT_NETWORK.toLocaleLowerCase()) { 
         case 'localhost': { 
-          context.defaultContractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
+          context.contractAddress = "0x5FbDB2315678afecb367f032d93F642f64180aa3";
           break; 
         } 
         case 'sepolia': { 
-          context.defaultContractAddress = "0x0c3569e963Cbdf810F9481587a709a8A82f8dE0A";
+          context.contractAddress = "0x0c3569e963Cbdf810F9481587a709a8A82f8dE0A";
             break; 
         } 
         default: { 
