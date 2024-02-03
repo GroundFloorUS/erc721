@@ -26,13 +26,9 @@ contract GroundfloorLroRedemptionToken is ERC721, ERC721URIStorage, ERC721Burnab
         console.log("Total supply set to %s",_totalSupply);
     }
 
-    function _baseURI() internal pure override returns (string memory) {
-        return "https://salmon-bizarre-mockingbird-50.mypinata.cloud/ipfs/";
-    }
-
     // ------------------------------------------------------------
     // Functions to return the total supply and total minted, but only to the owner
-    function series() public view onlyOwner returns (string memory) {
+    function seriesKey() public view onlyOwner returns (string memory) {
         return _seriesId;
     }
 
