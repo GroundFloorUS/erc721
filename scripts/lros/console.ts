@@ -374,7 +374,7 @@ async function createNftImage(imgPath, dna, data) {
   await encode(canvas);
 
   let coin = await Jimp.read(data.coinImage);
-  coin.resize(250, Jimp.AUTO);
+  await coin.resize(250, Jimp.AUTO);
   const nftBoxImage = canvas.composite(coin,(totalW-coin.getWidth()+25),5,Jimp.BLEND_SOURCE_OVER);
   
   // Read the base image
@@ -383,10 +383,12 @@ async function createNftImage(imgPath, dna, data) {
 
   //now composite them
   const compositeImage = image.composite(nftBoxImage,20,(totalH - 285),Jimp.BLEND_SOURCE_OVER);
-
   await compositeImage.getBufferAsync('image/png');
 
-  console.log("Creating Image: ", imgPath); 
+  // Scale the image to make sure we have a standard width on all token images
+  image.scaleToFit(1248, Jimp.AUTO);
+
+  console.log("Saving NFT Image: ", imgPath); 
   await image.writeAsync(imgPath);
 }
 
