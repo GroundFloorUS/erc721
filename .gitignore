@@ -4,7 +4,8 @@ node_modules
 # Hardhat files
 /cache
 /artifacts
-/tokens
+/tokens/lro-token/drops/**
+/tokens/groundfloor-note-token/drops/**
 
 # TypeChain files
 /typechain

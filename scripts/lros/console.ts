@@ -140,6 +140,7 @@ async function mintTokens(context) {
   token.data.symbol = await context.contract.symbol();
 
   /////////////////// Ask the questions about the drop
+  await ask(token.data, 'imageTemplate', 'What is the image template to use to create this token? (Dir ROOT/tokens/lro-token/images/)', '1026WBeresfordRd.jpg');
   await ask(token.data, 'series', 'What is the external url for this series?', 'https://crypto.groundfloor.com/nft');
   await ask(token.data, 'name', 'What is the name of the property?', '1703 Bryden Rd');
   await ask(token.data, 'address1', 'What is the address 1 of the property?', token.data.name);
@@ -180,6 +181,7 @@ async function mintTokens(context) {
     let imgPath = `${token.data.imagePath}/${dna}.jpeg` ;
     await copyFile(token.data.lroTemplatePath, imgPath);
     await createNftImage(imgPath, dna, token.data);
+    //await blendImage(imgPath);
   }
 
   // ----------------------------------------------------------------
@@ -284,6 +286,42 @@ async function mintTokens(context) {
   console.log(`${token.data.tokenCount} tokens created. View them here: ${token.data.seriesPath}`);
 }
 
+async function blendImage(imgPath) {
+  const canvas = new Jimp(512, 256, 0xFFFFFFFF);
+  const font32 = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
+  const font16 = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
+
+  // Promise-based wrapper for Jimp#getBuffer
+  function encode(image) {
+      return new Promise((fulfill, reject) => {
+          canvas.getBuffer(Jimp.MIME_PNG, (err, img) => err ? reject(err) : fulfill(img));
+      });
+  }
+
+  // function makeIteratorThatFillsWithColor(color) {
+  //   return function (x, y, offset) {
+  //     this.bitmap.data.writeUInt32BE(color, offset, true);
+  //   }
+  // };
+
+  // fill
+  // canvas.scan(32, 32, 256, 128, makeIteratorThatFillsWithColor(0x00000040));
+  canvas.print(font32, 20, 20, 'ROCK ON!!!!');
+
+  await encode(canvas);
+
+  let image = await Jimp.read(imgPath);
+
+  //now composite them
+  const compositeImage = image.composite(canvas,0,0,Jimp.BLEND_SOURCE_OVER);
+
+  const finalImage = await compositeImage.getBufferAsync('image/png');
+
+  console.log("Creating Image: ", imgPath); 
+  await image.writeAsync(imgPath);
+}
+
+
 // ----------------------------------------------------------------
 // Helper function to process the image and add the text to it
 // and then store it out to a file
@@ -291,39 +329,64 @@ async function createNftImage(imgPath, dna, data) {
   console.log("Creating Token Image: ", imgPath);
   const font32 = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
   const font16 = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
-  const image = await Jimp.read(imgPath);
-  const totalH = image.bitmap.height; 
-  
-  let startX = 20;
-  let startY = (totalH - 265);
+  const canvas = new Jimp(480, 260, 0xFFFFFFFF);
+  let totalH = canvas.bitmap.height; 
+  let totalW = canvas.bitmap.width;
+
+  // Promise-based wrapper for Jimp#getBuffer
+  function encode(img) {
+    return new Promise((fulfill, reject) => {
+        canvas.getBuffer(Jimp.MIME_PNG, (err, img) => err ? reject(err) : fulfill(img));
+    });
+  }
+
+  // Starting Values
+  let startX = 10;
+  let startY = 10;
   let ts = 20; // text spacing
   let bs = 30; // box spacing
 
   // Details Box
-  image.print(font32, (startX + 2), startY, data.name);
+  canvas.print(font32, (startX + 2), startY, data.name);
 
   // Reset Y Postion for Details
   startX += 5;
   startY += bs;
 
-  image.print(font16, startX, startY += ts, `Amount: ${data.amountUSD}`);
-  image.print(font16, startX, startY += ts, `Effective Annual Return: ${data.returnUSD}`);
-  image.print(font16, startX, startY += ts, `Purpose: ${data.purpose}`);
-  image.print(font16, startX, startY += ts, `Matures: ${data.maturityDate}`);
-  image.print(font16, startX, startY += ts, `Interest Rate: ${data.rate}%`);
+  canvas.print(font16, startX, startY += ts, `Amount: ${data.amountUSD}`);
+  canvas.print(font16, startX, startY += ts, `Effective Annual Return: ${data.returnUSD}`);
+  canvas.print(font16, startX, startY += ts, `Purpose: ${data.purpose}`);
+  canvas.print(font16, startX, startY += ts, `Matures: ${data.maturityDate}`);
+  canvas.print(font16, startX, startY += ts, `Interest Rate: ${data.rate}%`);
   // Reset Y Postion for Address and DNA boxes
   startY += bs + 10;
 
   // Address Box
-  image.print(font16, startX, startY, 'Address:');
-  image.print(font16, startX, startY + (ts * 1), data.address1);
-  image.print(font16, startX, startY + (ts * 2), data.address2);
+  canvas.print(font16, startX, startY, 'Address:');
+  canvas.print(font16, startX, startY + (ts * 1), data.address1);
+  canvas.print(font16, startX, startY + (ts * 2), data.address2);
 
   // DNA Box
-  startX += 230; // Reset X position
-  image.print(font16, startX, startY + (ts * 1), 'DNA:');
-  image.print(font16, startX, startY + (ts * 2), dna);
+  startX += 260; // Reset X position
+  canvas.print(font16, startX, startY + (ts * 1), 'DNA:');
+  canvas.print(font16, startX, startY + (ts * 2), dna);
 
+  await encode(canvas);
+
+  let coin = await Jimp.read(data.coinImage);
+  coin.resize(250, Jimp.AUTO);
+  const nftBoxImage = canvas.composite(coin,(totalW-coin.getWidth()+25),5,Jimp.BLEND_SOURCE_OVER);
+  
+  // Read the base image
+  const image = await Jimp.read(imgPath);
+  totalH = image.bitmap.height;
+
+  //now composite them
+  const compositeImage = image.composite(nftBoxImage,20,(totalH - 285),Jimp.BLEND_SOURCE_OVER);
+
+  await compositeImage.getBufferAsync('image/png');
+
+  console.log("Creating Image: ", imgPath); 
   await image.writeAsync(imgPath);
 }
 

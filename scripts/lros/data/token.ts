@@ -31,10 +31,12 @@ export class Token {
     /////////////////// Paths and setup
     this.data.seriesID = `${this.data.seriesKey}-${this.data.loanId}`;
     this.data.rootPath = `./tokens/lro-token`;
+    this.data.assetPath = `./tokens/lro-token/assets`;
+    this.data.coinImage = `${this.data.assetPath}/gfCoin.png`;
     this.data.seriesPath = `${this.data.rootPath}/drops/GLRT-${this.data.seriesID}`;
     this.data.imagePath = `${this.data.seriesPath}/GLRT-${this.data.seriesID}-images`;
     this.data.metadataPath = `${this.data.seriesPath}/GLRT-${this.data.seriesID}-metadata`;
-    this.data.lroTemplatePath = `${this.data.rootPath}/lro-template.jpeg`;
+    this.data.lroTemplatePath = `${this.data.rootPath}/images/${this.data.imageTemplate}`;
     this.data.template_source = `${this.data.rootPath}/metadata-values.json.mustache`;
   }
 
