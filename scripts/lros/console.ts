@@ -326,7 +326,6 @@ async function blendImage(imgPath) {
 // Helper function to process the image and add the text to it
 // and then store it out to a file
 async function createNftImage(imgPath, dna, data) {
-  console.log("Creating Token Image: ", imgPath);
   const font32 = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
   const font16 = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
   const canvas = new Jimp(480, 260, 0xFFFFFFFF);
