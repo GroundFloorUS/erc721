@@ -353,10 +353,10 @@ async function createNftImage(imgPath, dna, data) {
   startY += bs;
 
   canvas.print(font16, startX, startY += ts, `Amount: ${data.amountUSD}`);
-  canvas.print(font16, startX, startY += ts, `Effective Annual Return: ${data.returnUSD}`);
+  canvas.print(font16, startX, startY += ts, `Effective Annual Return: ${data.rate}`);
   canvas.print(font16, startX, startY += ts, `Purpose: ${data.purpose}`);
   canvas.print(font16, startX, startY += ts, `Matures: ${data.maturityDate}`);
-  canvas.print(font16, startX, startY += ts, `Interest Rate: ${data.rate}%`);
+  canvas.print(font16, startX, startY += ts, `Payment At Maturity: ${data.returnUSD}%`);
   // Reset Y Postion for Address and DNA boxes
   startY += bs + 10;
 
