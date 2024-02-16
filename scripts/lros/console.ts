@@ -140,7 +140,7 @@ async function mintTokens(context) {
   token.data.symbol = await context.contract.symbol();
 
   /////////////////// Ask the questions about the drop
-  await ask(token.data, 'imageTemplate', 'What is the image template to use to create this token? (Dir ROOT/tokens/lro-token/images/)', '1026WBeresfordRd.jpg');
+  await ask(token.data, 'imageTemplate', 'What is the image template to use to create this token? (Dir ROOT/tokens/lro-token/images/)', '1703BrydenRd.jpeg');
   await ask(token.data, 'series', 'What is the external url for this series?', 'https://crypto.groundfloor.com/nft');
   await ask(token.data, 'name', 'What is the name of the property?', '1703 Bryden Rd');
   await ask(token.data, 'address1', 'What is the address 1 of the property?', token.data.name);
@@ -286,48 +286,32 @@ async function mintTokens(context) {
   console.log(`${token.data.tokenCount} tokens created. View them here: ${token.data.seriesPath}`);
 }
 
-async function blendImage(imgPath) {
-  const canvas = new Jimp(512, 256, 0xFFFFFFFF);
-  const font32 = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
-  const font16 = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
-
-  // Promise-based wrapper for Jimp#getBuffer
-  function encode(image) {
-      return new Promise((fulfill, reject) => {
-          canvas.getBuffer(Jimp.MIME_PNG, (err, img) => err ? reject(err) : fulfill(img));
-      });
-  }
-
-  // function makeIteratorThatFillsWithColor(color) {
-  //   return function (x, y, offset) {
-  //     this.bitmap.data.writeUInt32BE(color, offset, true);
-  //   }
-  // };
-
-  // fill
-  // canvas.scan(32, 32, 256, 128, makeIteratorThatFillsWithColor(0x00000040));
-  canvas.print(font32, 20, 20, 'ROCK ON!!!!');
-
-  await encode(canvas);
-
-  let image = await Jimp.read(imgPath);
-
-  //now composite them
-  const compositeImage = image.composite(canvas,0,0,Jimp.BLEND_SOURCE_OVER);
-
-  const finalImage = await compositeImage.getBufferAsync('image/png');
-
-  console.log("Creating Image: ", imgPath); 
-  await image.writeAsync(imgPath);
-}
-
-
 // ----------------------------------------------------------------
 // Helper function to process the image and add the text to it
 // and then store it out to a file
 async function createNftImage(imgPath, dna, data) {
   const font32 = await Jimp.loadFont(Jimp.FONT_SANS_32_BLACK);
   const font16 = await Jimp.loadFont(Jimp.FONT_SANS_16_BLACK);
+  // Read the base image
+  const image = await Jimp.read(imgPath);
+  const imageW = image.bitmap.width;
+  const imageH = image.bitmap.height;
+ 
+  // Create the title box
+  const title = new Jimp(imageW, 60, 0xFFFFFFFF);
+
+  // Promise-based wrapper for Jimp#getBuffer
+  function encodeTitle(img) {
+    return new Promise((fulfill, reject) => {
+        title.getBuffer(Jimp.MIME_PNG, (err, img) => err ? reject(err) : fulfill(img));
+    });
+  }
+
+  // Title Box
+  title.print(font32, ((imageW / 2)-360), 13, "Groundfloor Real Estate Investment Redemption Token");
+  await encodeTitle(title);
+
+  // Build details box
   const canvas = new Jimp(480, 260, 0xFFFFFFFF);
   let totalH = canvas.bitmap.height; 
   let totalW = canvas.bitmap.width;
@@ -376,13 +360,12 @@ async function createNftImage(imgPath, dna, data) {
   await coin.resize(250, Jimp.AUTO);
   const nftBoxImage = canvas.composite(coin,(totalW-coin.getWidth()+25),5,Jimp.BLEND_SOURCE_OVER);
   
-  // Read the base image
-  const image = await Jimp.read(imgPath);
-  totalH = image.bitmap.height;
-
   //now composite them
-  const compositeImage = image.composite(nftBoxImage,20,(totalH - 285),Jimp.BLEND_SOURCE_OVER);
+  const compositeImage = image.composite(nftBoxImage,20,(imageH - 285),Jimp.BLEND_SOURCE_OVER);
   await compositeImage.getBufferAsync('image/png');
+
+  const tokenImage = image.composite(title,0,0,Jimp.BLEND_SOURCE_OVER);
+  await tokenImage.getBufferAsync('image/png');
 
   // Scale the image to make sure we have a standard width on all token images
   image.scaleToFit(1248, Jimp.AUTO);
@@ -599,8 +582,7 @@ async function main() {
           break; 
       } 
       default: { 
-          console.log(`Exiting, Invalid environment: ${process.env.HARDHAT_NETWORK}`);
-          return;
+        console.log(`WARNING!!!! Unknown environment: ${process.env.HARDHAT_NETWORK}, no defaults loaded.`);
       } 
   }  
   console.log("Loaded environment defaults for: %s", process.env.HARDHAT_NETWORK);

@@ -20,6 +20,10 @@ const config: HardhatUserConfig = {
     localhost: {
       url: "http://127.0.0.1:8545"
     },
+    mainnet: {
+      accounts: [`${process.env.GLRT_PRIVATE_KEY}`],
+      url: `${process.env.GLRT_URL}`,
+    },
     sepolia: {
       accounts: [`${process.env.TEST_PRIVATE_KEY}`],
       url: `${process.env.TEST_NETWORK_URL}`
